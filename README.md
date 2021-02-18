@@ -1,8 +1,6 @@
 ***An Analysis of Millennial's Expenditure on Pets***
 
-Aditi Routh1 and Brenda Cude2
-1 Ph.D. Student, Department of Financial Planning, Housing, and Consumer Economics, University of Georgia
-2 Professor Emerita, Department of Financial Planning, Housing, and Consumer Economics, University of Georgia
+**About the project:**
 
 Nearly two-thirds of U.S. households own pets (American Veterinary Medical Association [AVMA], 2019). 
 Caring for pets is expensive, and spending recently has snowballed (American Pet Products Association [APPA], 2019). 
@@ -14,8 +12,15 @@ Psychologists believe that pets replace children for millennials (Bhattarai, 201
 This paper analyzes the influence of millennials' pet expenditures on their recreational and social activities expenditures. 
 It has been found that spending on pets positively influences the expenditure on other entrainment goods and services. 
 The results will be of interest to pet market researchers, social scientists, and family science researchers.
+
 Keywords. pet expenditures, entertainment expenditures, the millennial generation, Consumer Expenditure Survey
 
-***Software used: STATA ***
+**About the dataset:**
+The data used for this study comes from the interview segment of the Consumer Expenditure (CE) Surveys collected by the Census Bureau for the U.S. Bureau of Labor Statistics (BLS). The Consumer Expenditure Survey is a quarterly panel survey that provides data on a households' expenditure, income, and socio-demographic characteristics. It is the only Federal household survey to provide information on the complete range of consumers' expenditures and incomes. We isolate items pertaining to expenditure on pets (from the entertainment expenditure) to formulate the yearly spending on pets. We consider data for the years 2010 through 2019. 
 
-***Econometric Tools: OLS, Log-Log OLS, Regression Diagnostics, LOWESS Smoothing***
+
+**Statistical Software used:**
+STATA
+
+**Econometric Tools used:**
+OLS, Log-Log OLS, Regression Diagnostics, LOWESS Smoothing
