@@ -1,0 +1,339 @@
+clear
+cd "/Users/aditirouth/Desktop/Misc/Research/_Pet Expenditures/Raw_Feb2021/intrvw19/intrvw19"
+
+********************************************************************************
+*using the each FMLI (quarterly) datasets and calculating population weights
+********************************************************************************
+
+* Set your time parameters
+global yr1 = 19
+global yr2 = 20
+global year = 2019
+
+use fmli${yr2}1.dta
+
+*calculating the population weight
+
+gen month = real(qintrvmo)
+gen quarter = 3 
+	replace quarter = 1 if (qintrvmo == "01" | qintrvmo == "02" | ///
+								qintrvmo == "03") & qintrvyr == "20${yr1}" 
+	replace quarter = 5 if (qintrvmo == "01" | qintrvmo == "02" | ///
+								qintrvmo == "03") & qintrvyr == "20${yr2}" 
+								
+gen popwt = finlwt21*(((month-1)/3)/4) if quarter == 1 
+	replace popwt = finlwt21*(((4-month)/3)/4) if quarter == 5 
+	replace popwt = finlwt21/4 if quarter == 3 
+
+
+/*Demographic Variables*/
+
+/*REF_RACE	1	White
+REF_RACE	2	Black
+REF_RACE	3	Native American
+REF_RACE	4	Asian
+REF_RACE	5	Pacific Islander
+REF_RACE	6	Multi-race
+*/
+destring ref_race, replace
+
+gen white=0
+replace white=1 if ref_race==1
+
+gen black=0
+replace black=1 if ref_race==2
+
+gen nat_pi_multi=0
+replace nat_pi_multi=1 if ref_race==3
+replace nat_pi_multi=1 if ref_race==5
+replace nat_pi_multi=1 if ref_race==6
+
+gen asian=0
+replace asian=1 if ref_race==4
+
+/*
+EDUC_REF	10	Nursery, kindergarten, and elementary (grades 1-8)
+EDUC_REF	11	High school (grades 9-12), no degree
+EDUC_REF	12	High school graduate
+EDUC_REF	13	Some college, no degree
+EDUC_REF	14	Associate's degree in college
+EDUC_REF	15	Bachelors degree
+EDUC_REF	16	Masters, professional or doctorate degree
+*/
+destring educ_ref, replace
+tab educ_ref
+
+gen nohighsch=0
+replace nohighsch=1 if educ_ref==10
+replace nohighsch=1 if educ_ref==11
+
+gen highsch=0
+replace highsch=1 if educ_ref==12
+
+gen somecoll=0
+replace somecoll=1 if educ_ref==13
+replace somecoll=1 if educ_ref==14
+
+gen colldeg=0
+replace colldeg=1 if educ_ref==15
+replace colldeg=1 if educ_ref==16
+
+/*
+REGION	1	Northeast
+REGION	2	Midwest
+REGION	3	South
+REGION	4	West
+*/
+destring region, replace
+tab region
+
+gen northeast=0
+gen midwest=0
+gen south=0
+gen west=0
+
+replace northeast=1 if region==1
+replace midwest=1 if region==2
+replace south=1 if region==3
+replace west=1 if region==4
+
+/*
+MARITAL1	1	Married
+MARITAL1	2	Widowed
+MARITAL1	3	Divorced
+MARITAL1	4	Separated
+MARITAL1	5	Never married
+*/
+destring marital1, replace
+tab marital1
+
+gen married=0
+replace married=1 if marital1==1
+
+gen never_mar=0
+replace never_mar=1 if marital1==5
+
+gen wid_div_sep=0
+replace wid_div_sep=1 if marital1==2
+replace wid_div_sep=1 if marital1==3
+replace wid_div_sep=1 if marital1==4
+
+*fincbtxm Total amount of family income AFTER taxes (Imputed or collected data)
+*g income = finatxem
+
+*Family size
+tab fam_size 
+
+/*
+CHILDAGE	0	No children
+CHILDAGE	1	Oldest child less than 6
+CHILDAGE	2	Oldest child age 6-11 and at least one child less than 6
+CHILDAGE	3	All children age 6-11
+CHILDAGE	4	Oldest child age 12-17 and at least one child less than 12
+CHILDAGE	5	All children age 12-17
+CHILDAGE	6	Oldest child age great er than 17 and at least one child less than 17
+CHILDAGE	7	All children age greater than 17
+*/
+
+destring childage, replace
+
+g nochild = 0
+replace nochild = 1 if childage == 0
+
+g child_6_11 = 0
+replace child_6_11 = 1 if childage >= 1 & childage <= 3
+
+g child_12_17 = 0
+replace child_12_17 = 1 if childage >= 4 & childage <= 6
+
+g child_17abv = 0
+replace child_17abv = 1 if childage == 7
+
+/*
+SEX_REF	1	Reference person is male
+SEX_REF	2	Reference person is female
+*/
+destring sex_ref, replace
+g male= sex_ref
+replace male = 0 if male == 2 /*Male = 1, Female = 0*/
+
+/* Does CU reside inside a Metropolitan Statistical Area (MSA)?
+SMSASTAT	1	Yes
+SMSASTAT	2	No*/
+
+destring smsastat, replace
+
+tab smsastat
+g metropolitan = 0
+replace metropolitan = 1 if smsastat == 1
+
+*computing birth year
+
+g ref_yr = $year
+g b_yr = ref_yr - age_ref
+
+*millennial generation
+g milgen = 1 if b_yr >= 1981 & b_yr <= 1996
+replace milgen = 0 if milgen == .
+
+*newid
+tostring newid, replace
+g newid__n = substr(newid, 1, 6)
+
+g qtr = substr(newid, 7, 7)
+
+destring qtr, replace
+destring newid__n newid, replace
+
+order newid__n
+sort newid__n
+
+*round/quarter
+g round = 1
+
+save u_fmli${yr2}1.dta, replace
+********************************************************************************
+*using the each MTBI (quarterly) monthly datasets and making quarterly datasets 
+*with the pet exp, ent exp, etc.
+********************************************************************************
+
+clear
+use mtbi${yr2}1.dta
+
+
+destring ucc, replace
+
+
+*calculating pet expenditures
+g pet1 = cost if ucc == 610320 
+g pet2 = cost if ucc == 620410
+g pet3 = cost if ucc == 620420
+replace pet1 = 0 if pet1 == .
+replace pet2 = 0 if pet2 == .
+replace pet3 = 0 if pet3 == .
+
+g pet_exp = (pet1 + pet2 + pet3)
+ 
+g other_ent = cost if inlist(ucc, 610120, 610140, 610110, 610900,620111, ///
+620121,620122,620211,620212,620221,620222,620310,620903, 270310,310110, ///
+310120, 310130,310210,310220,310230,310311,310312,310313,310320,310330, ///
+310333,310334,310341,310342,340610,340902,340905,610130, 620904,620912, ///
+870401,870402,870403,870404,870501,870502,870503,870504,870605,870606, ///
+870607,870608, 870701,870702,870703,870704,870801,870802,870803,870804, ///
+520901,520904,520907,600110,600210,600310,600410,600420,600430,600901, ///
+600902,610210,610230,620320, 620330,620905,620906,620908,620909, 620919, ///
+620921,620922)
+replace other_ent = 0 if other_ent == .
+
+g total_ent = cost if inlist(ucc, 610320, 620410, 620420, 610120, 610140, 610110, 610900,620111, ///
+620121,620122,620211,620212,620221,620222,620310,620903, 270310,310110, ///
+310120, 310130,310210,310220,310230,310311,310312,310313,310320,310330, ///
+310333,310334,310341,310342,340610,340902,340905,610130, 620904,620912, ///
+870401,870402,870403,870404,870501,870502,870503,870504,870605,870606, ///
+870607,870608, 870701,870702,870703,870704,870801,870802,870803,870804, ///
+520901,520904,520907,600110,600210,600310,600410,600420,600430,600901, ///
+600902,610210,610230,620320, 620330,620905,620906,620908,620909, 620919, ///
+620921,620922)
+replace total_ent = 0 if total_ent == .
+
+destring ref_yr, replace
+collapse(sum) ann_tot_exp = cost pet_exp other_ent total_ent, by(newid ref_yr)
+
+keep if ref_yr == $year
+*newid
+tostring newid, replace
+g newid__n = substr(newid, 1, 6)
+
+g qtr = substr(newid, 7, 7)
+
+destring qtr, replace
+destring newid__n newid, replace
+
+order newid__n
+sort newid__n
+
+*round/quarter
+g round = 1
+
+*logarithm
+g ent_log = log(other_ent)
+g pet_log = log(pet_exp)
+g totent_log = log(total_ent)
+g totexp_log = log(ann_tot_exp)
+
+save u_mtbi${yr2}1.dta , replace
+
+********************************************************************************
+*merging quarterly fmli and mtbi data
+********************************************************************************
+
+merge 1:1 newid using u_fmli${yr2}1.dta
+save merged${yr2}1.dta, replace
+
+********************************************************************************
+*Do this for all 4 quarter, append all the datasets for years 2010 - 2019
+********************************************************************************
+
+ clear
+
+. use 2010_foruse.dta
+append using 2011_foruse.dta
+append using 2012_foruse.dta
+append using 2013_foruse.dta
+append using 2014_foruse.dta
+append using 2015_foruse.dta
+append using 2016_foruse.dta
+append using 2017_foruse.dta, force
+append using 2018_foruse.dta, force
+append using 2019_foruse.dta, force
+
+ g y2010 = cond(ref_yr == 2010, 1, 0)
+ g y2011 = cond(ref_yr == 2011, 1, 0)
+ g y2012 = cond(ref_yr == 2012, 1, 0)
+
+ g y2013 = cond(ref_yr == 2013, 1, 0)
+ g y2014 = cond(ref_yr == 2014, 1, 0)
+ g y2015 = cond(ref_yr == 2015, 1, 0)
+ g y2016 = cond(ref_yr == 2016, 1, 0)
+ g y2017 = cond(ref_yr == 2017, 1, 0)
+ g y2018 = cond(ref_yr == 2018, 1, 0)
+ g y2019 = cond(ref_yr == 2019, 1, 0)
+
+********************************************************************************
+*Descriptive Statistics
+********************************************************************************
+
+
+bysort pet: sum ent_log pet_log totexp_log white black nohighsch highsch ///
+somecoll colldeg northeast midwest south west married never_mar wid_div_sep ///
+ male nochild child_6_11 child_12_17 child_17abv metropolitan ///
+ref_yr [iweight = finlwt21] if milgen == 1
+
+
+sum ent_log pet_log totexp_log white black nohighsch highsch ///
+somecoll colldeg northeast midwest south west married never_mar wid_div_sep ///
+ male nochild child_6_11 child_12_17 child_17abv metropolitan ///
+ref_yr [iweight = finlwt21] if pet == 1
+
+********************************************************************************
+*Weigting the data
+********************************************************************************
+
+svyset [pweight=finlwt21], brrweight(wtrep01-wtrep44) vce(brr)
+
+********************************************************************************
+*Log-Log OLS regression
+********************************************************************************
+
+svy: reg ent_log pet_log income white black somecoll colldeg northeast midwest south ///
+married male metropolitan nochild y20* if milgen == 1
+
+svy: reg  other_ent pet_exp ann_tot_exp white black somecoll colldeg northeast ///
+midwest south married male metropolitan nochild y20* if milgen == 1
+
+********************************************************************************
+*Lowess Smoothing
+********************************************************************************
+
+twoway (lowess other_ent pet_exp if pet == 1, bwidth(0.4)) ///
+(scatter other_ent pet_exp if pet_exp > 0)  , by (milgen)
